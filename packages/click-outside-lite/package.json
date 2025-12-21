@@ -1,6 +1,6 @@
 {
     "name": "click-outside-lite",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A lightweight, framework-agnostic utility for detecting clicks outside an element",
     "type": "module",
     "main": "./dist/index.cjs",

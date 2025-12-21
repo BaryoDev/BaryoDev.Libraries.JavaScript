@@ -1,6 +1,6 @@
 {
     "name": "tiny-debounce-throttle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A lightweight, zero-dependency debounce and throttle library",
     "type": "module",
     "main": "./dist/index.cjs",

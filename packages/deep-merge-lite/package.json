@@ -1,6 +1,6 @@
 {
     "name": "deep-merge-lite",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A high-performance, zero-dependency deep merge utility for safe state management",
     "type": "module",
     "main": "./dist/index.cjs",

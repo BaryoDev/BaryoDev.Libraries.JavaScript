@@ -1,6 +1,6 @@
 {
     "name": "deep-clean-obj",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Recursive object cleaner that removes null, undefined, and empty strings",
     "type": "module",
     "main": "./dist/index.cjs",

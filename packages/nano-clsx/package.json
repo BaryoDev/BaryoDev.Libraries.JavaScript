@@ -1,6 +1,6 @@
 {
     "name": "nano-clsx",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A tiny, zero-dependency alternative to classnames or clsx",
     "type": "module",
     "main": "./dist/index.cjs",

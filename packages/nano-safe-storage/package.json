@@ -1,6 +1,6 @@
 {
     "name": "nano-safe-storage",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A fault-tolerant, zero-dependency wrapper for browser localStorage with automatic JSON serialization",
     "type": "module",
     "main": "./dist/index.cjs",
