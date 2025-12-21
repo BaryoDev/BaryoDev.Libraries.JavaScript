@@ -1,0 +1,45 @@
+{
+    "name": "nano-human-bytes",
+    "version": "1.0.0",
+    "description": "Human-readable byte formatting with parsing and locale support",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "build": "tsup",
+        "test": "vitest run"
+    },
+    "keywords": [
+        "bytes",
+        "human-readable",
+        "format",
+        "filesize",
+        "kb",
+        "mb",
+        "gb"
+    ],
+    "author": "BaryoDev",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript",
+        "directory": "packages/nano-human-bytes"
+    }
+}
