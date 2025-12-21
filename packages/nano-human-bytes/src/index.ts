@@ -87,8 +87,6 @@ export function parseBytes(input: string): number {
     const unitRaw = match[2] || 'b';
     const unit = unitRaw.toLowerCase();
 
-    // Determine if bits
-    const isBits = unit.endsWith('b') && !unit.endsWith('kb') && unit !== 'b';
 
     const unitMap: Record<string, number> = {
         'b': 1,
