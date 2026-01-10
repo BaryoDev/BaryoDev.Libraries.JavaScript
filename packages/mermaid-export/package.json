@@ -1,7 +1,7 @@
 {
-    "name": "tiny-debounce-throttle",
+    "name": "mermaid-export",
     "version": "1.0.0",
-    "description": "A lightweight, zero-dependency debounce and throttle library",
+    "description": "Export Mermaid diagrams to SVG or image formats with a simple API",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
@@ -27,16 +27,26 @@
         "test": "vitest run"
     },
     "keywords": [
-        "debounce",
-        "throttle",
-        "performance",
-        "utility"
+        "mermaid",
+        "diagram",
+        "svg",
+        "png",
+        "export",
+        "render",
+        "flowchart",
+        "sequence-diagram"
     ],
     "author": "BaryoDev",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript",
-        "directory": "packages/tiny-debounce-throttle"
+        "directory": "packages/mermaid-export"
+    },
+    "dependencies": {
+        "puppeteer": "^23.0.0"
+    },
+    "engines": {
+        "node": ">=18"
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "nano-human-bytes",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "Human-readable byte formatting with parsing and locale support",
     "type": "module",
     "main": "./dist/index.cjs",

@@ -1,6 +1,6 @@
 {
     "name": "nano-slug",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "The smallest, most efficient URL-slug generator using modern String.prototype.normalize",
     "type": "module",
     "main": "./dist/index.cjs",

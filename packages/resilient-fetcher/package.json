@@ -1,6 +1,6 @@
 {
     "name": "resilient-fetcher",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "A lightweight, zero-dependency wrapper for fetch with automatic retries, timeouts, and circuit breaker",
     "type": "module",
     "main": "./dist/index.cjs",
