@@ -26,6 +26,23 @@ jobs:
                   node-version: 20
                   cache: "pnpm"
 
+            - name: Install Chromium dependencies for Puppeteer
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    libnss3 \
+                    libatk1.0-0 \
+                    libatk-bridge2.0-0 \
+                    libcups2 \
+                    libdrm2 \
+                    libxkbcommon0 \
+                    libxcomposite1 \
+                    libxdamage1 \
+                    libxfixes3 \
+                    libxrandr2 \
+                    libgbm1 \
+                    libasound2
+
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
@@ -33,8 +50,9 @@ jobs:
               run: pnpm build
 
             - name: Lint
-              # Assuming lint script exists in root package.json or per-package
               run: pnpm lint || echo "Linting failed but continuing for now"
 
             - name: Test
               run: pnpm test
+              env:
+                  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: false
