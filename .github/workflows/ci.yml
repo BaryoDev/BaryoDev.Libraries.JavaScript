@@ -24,9 +24,9 @@ jobs:
       # This is a pnpm workspace. npm does not read pnpm-workspace.yaml, so `npm ci`
       # silently skips every per-package dependency and the suite fails on imports
       # that are correctly declared.
+      # No `version` here on purpose: package.json declares `packageManager`, and
+      # specifying both makes the action fail with ERR_PNPM_BAD_PM_VERSION.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
