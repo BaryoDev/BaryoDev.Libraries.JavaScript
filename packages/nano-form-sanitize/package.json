@@ -1,0 +1,47 @@
+{
+    "name": "nano-form-sanitize",
+    "version": "1.0.0",
+    "description": "Tiny form value sanitizer — converts empty strings to null before API submission",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "build": "tsup",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "keywords": [
+        "form",
+        "sanitize",
+        "empty-string",
+        "null",
+        "api",
+        "clean",
+        "form-values"
+    ],
+    "author": "BaryoDev",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript",
+        "directory": "packages/nano-form-sanitize"
+    },
+    "homepage": "https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript/tree/main/packages/nano-form-sanitize"
+}

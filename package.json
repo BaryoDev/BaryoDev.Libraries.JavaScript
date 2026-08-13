@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "bench": "vitest bench",
     "lint": "eslint packages/*/src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm -r exec tsc --noEmit",
     "clean": "pnpm -r exec rm -rf dist",
     "changeset": "changeset",
     "version": "changeset version",
