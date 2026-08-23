@@ -36,11 +36,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # mermaid-export renders through puppeteer, which needs a real Chrome. The
-      # browser arrives via puppeteer's postinstall script, and that does not run
-      # here, so eleven of its tests fail with "Could not find Chrome (ver. …)".
-      # Installing it explicitly does not depend on lifecycle-script behaviour.
+      # browser normally arrives via puppeteer's postinstall script, which does not
+      # run here, so eleven of its tests failed with "Could not find Chrome (ver. …)".
+      #
+      # Filtered to the one package that depends on puppeteer. A bare `pnpm exec` runs
+      # from the workspace root, where the binary does not exist, and fails with
+      # "Command \"puppeteer\" not found" before it reaches the package that has it.
       - name: Install Chrome for puppeteer
-        run: pnpm exec puppeteer browsers install chrome
+        run: pnpm --filter mermaid-export exec puppeteer browsers install chrome
 
       - name: Typecheck
         run: pnpm typecheck
