@@ -153,4 +153,39 @@ describe('sanitize', () => {
                 .toEqual({ a: '', b: '  hi  ' });
         });
     });
+
+    describe('deep mode with non-plain objects', () => {
+        test('leaves File, Blob, Map, Set, URL and Date as they are', () => {
+            const blob = new Blob(['x']);
+            const map = new Map([['a', 1]]);
+            const set = new Set([1]);
+            const url = new URL('http://x/');
+            const date = new Date(0);
+            const file = new File(['x'], 'a.txt');
+            const out = sanitize({ blob, map, set, url, date, file }, { deep: true });
+
+            expect(out.blob).toBe(blob);
+            expect(out.map).toBe(map);
+            expect(out.set).toBe(set);
+            expect(out.url).toBe(url);
+            expect(out.date).toBe(date);
+            expect(out.file).toBe(file);
+        });
+
+        test('leaves class instances as they are', () => {
+            class Money { constructor(public amount: string) { } }
+            const m = new Money('');
+            const out = sanitize({ m }, { deep: true });
+            expect(out.m).toBe(m);
+            expect(out.m.amount).toBe('');
+        });
+
+        test('still recurses into plain objects, including null-prototype ones', () => {
+            const bare = Object.create(null);
+            bare.c = '';
+            const out = sanitize({ a: { b: '' }, bare }, { deep: true }) as any;
+            expect(out.a).toEqual({ b: null });
+            expect(out.bare.c).toBeNull();
+        });
+    });
 });

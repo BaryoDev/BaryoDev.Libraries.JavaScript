@@ -16,6 +16,12 @@ const defaults: Required<SanitizeOptions> = {
     deep: false,
 };
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    if (typeof value !== 'object' || value === null) return false;
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+}
+
 function processValue(value: unknown, opts: Required<SanitizeOptions>): unknown {
     if (typeof value === 'string') {
         let v = opts.trim ? value.trim() : value;
@@ -23,8 +29,10 @@ function processValue(value: unknown, opts: Required<SanitizeOptions>): unknown 
         return v;
     }
 
-    if (opts.deep && typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
-        return sanitizeObject(value as Record<string, unknown>, opts);
+    // Only plain objects are copied. File, Blob, Map, Set, URL, Date and class
+    // instances are returned as they are.
+    if (opts.deep && isPlainObject(value)) {
+        return sanitizeObject(value, opts);
     }
 
     return value;
