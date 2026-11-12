@@ -11,11 +11,9 @@ export interface MergeOptions {
  * Checks if a value is a plain object (not array, Date, RegExp, etc.)
  */
 function isPlainObject(item: unknown): item is Record<string, unknown> {
-    return (
-        item !== null &&
-        typeof item === 'object' &&
-        (item as object).constructor === Object
-    );
+    if (item === null || typeof item !== 'object') return false;
+    const proto = Object.getPrototypeOf(item);
+    return proto === Object.prototype || proto === null;
 }
 
 /**
@@ -52,6 +50,7 @@ export function cloneDeep<T>(value: T, seen = new WeakMap()): T {
         const clone: Record<string, unknown> = {};
         seen.set(value, clone);
         for (const key of Object.keys(value)) {
+            if (key === '__proto__') continue;
             clone[key] = cloneDeep(value[key], seen);
         }
         return clone as T;
@@ -88,8 +87,9 @@ function deepMergeTwo(
     options: MergeOptions
 ): Record<string, unknown> {
     for (const key of Object.keys(source)) {
-        // Prototype pollution protection
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        // Prototype pollution protection. Other keys, including an own
+        // `constructor`, are plain data and are merged like any other.
+        if (key === '__proto__') {
             continue;
         }
 

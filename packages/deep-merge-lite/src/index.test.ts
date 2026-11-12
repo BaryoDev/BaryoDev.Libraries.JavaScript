@@ -134,4 +134,53 @@ describe('edge cases', () => {
         // If deepMergeTwo walks, it might stack overflow if not tracked.
         // We expect it NOT to crash.
     });
+
+    describe('constructor and __proto__ keys', () => {
+        test('a source with an own constructor key is still merged', () => {
+            const result = merge({ a: 1 }, JSON.parse('{"constructor":1,"b":2}')) as any;
+            expect(result.a).toBe(1);
+            expect(result.b).toBe(2);
+            expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(true);
+            expect(result.constructor).toBe(1);
+        });
+
+        test('nested objects with a constructor key are cloned, not aliased', () => {
+            const source = { x: { constructor: { k: 1 }, y: { z: 1 } } };
+            const result = merge({}, source) as any;
+            expect(result.x).not.toBe(source.x);
+            expect(result.x.y).not.toBe(source.x.y);
+            result.x.y.z = 99;
+            expect(source.x.y.z).toBe(1);
+            expect(result.x.constructor).not.toBe(source.x.constructor);
+            expect(result.x.constructor).toEqual({ k: 1 });
+        });
+
+        test('constructor.prototype in a source does not reach Object.prototype', () => {
+            merge({}, JSON.parse('{"constructor":{"prototype":{"polluted":true}}}'));
+            expect(({} as any).polluted).toBeUndefined();
+            expect((Object.prototype as any).polluted).toBeUndefined();
+        });
+
+        test('nested __proto__ is skipped when cloning', () => {
+            const result = merge({}, JSON.parse('{"x":{"__proto__":{"p":1},"q":2}}')) as any;
+            expect(result.x.q).toBe(2);
+            expect(result.x.p).toBeUndefined();
+            expect(Object.getPrototypeOf(result.x)).toBe(Object.prototype);
+            expect(({} as any).p).toBeUndefined();
+            expect((Object.prototype as any).p).toBeUndefined();
+        });
+
+        test('nested __proto__ is skipped when merging into an existing object', () => {
+            const result = merge({ x: { a: 1 } }, JSON.parse('{"x":{"__proto__":{"p":1},"b":2}}')) as any;
+            expect(result.x).toEqual({ a: 1, b: 2 });
+            expect(result.x.p).toBeUndefined();
+            expect((Object.prototype as any).p).toBeUndefined();
+        });
+
+        test('cloneDeep skips __proto__ and keeps constructor data', () => {
+            const clone = cloneDeep(JSON.parse('{"__proto__":{"p":1},"constructor":{"k":1}}')) as any;
+            expect(clone.p).toBeUndefined();
+            expect(clone.constructor).toEqual({ k: 1 });
+        });
+    });
 });
