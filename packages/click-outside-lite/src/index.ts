@@ -39,6 +39,9 @@ export function onClickOutside(
         return el;
     };
 
+    // Throws once here for an invalid selector, not on every event
+    ignore.forEach(selector => document.querySelector(selector));
+
     const targets = Array.isArray(target) ? target : [target];
     const elements = targets.map(resolveElement).filter(Boolean) as HTMLElement[];
 
@@ -53,24 +56,29 @@ export function onClickOutside(
         if (!isActive) return;
 
         const target = event.target as Node;
+        // composedPath sees through shadow roots, where event.target is the host
+        const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+        const within = (el: Element) => path.includes(el) || el.contains(target);
 
         // Check if click is inside any of the elements
-        const isInside = elements.some(el => el.contains(target));
+        const isInside = elements.some(within);
         if (isInside) return;
 
         // Check if click is on an ignored element
         if (ignore.length > 0) {
             const isIgnored = ignore.some(selector => {
                 const ignored = document.querySelectorAll(selector);
-                return Array.from(ignored).some(el => el.contains(target));
+                return Array.from(ignored).some(within);
             });
             if (isIgnored) return;
         }
 
-        callback(event);
-
-        if (once) {
-            cleanup();
+        try {
+            callback(event);
+        } finally {
+            if (once) {
+                cleanup();
+            }
         }
     };
 
