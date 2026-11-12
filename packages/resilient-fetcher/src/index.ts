@@ -3,7 +3,7 @@ export interface ResilientOptions {
     retries?: number;
     /** Delay between retries in ms (default: 1000) */
     retryDelay?: number;
-    /** Request timeout in ms (default: 5000) */
+    /** Request timeout in ms (default: 5000). 0 or Infinity means no timeout. */
     timeout?: number;
     /** Backoff strategy: 'fixed' | 'exponential' (default: 'fixed') */
     backoff?: 'fixed' | 'exponential';
@@ -38,10 +38,52 @@ const defaultRetryOn = (_error: Error | null, response: Response | null): boolea
 };
 
 /** Thrown for a non-ok response that is not retried. Never passed to retryOn. */
-class HttpStatusError extends Error {
-    constructor(status: number) {
-        super(`Request failed with status ${status}`);
+export class HttpStatusError extends Error {
+    /** HTTP status code of the response */
+    readonly status: number;
+    /** The response, with its body unread so the caller can read the error body */
+    readonly response: Response;
+
+    constructor(response: Response) {
+        super(`Request failed with status ${response.status}`);
         this.name = 'HttpStatusError';
+        this.status = response.status;
+        this.response = response;
+    }
+}
+
+/** Largest delay setTimeout accepts; above it the timer fires after 1 ms. */
+const MAX_TIMER_MS = 2147483647;
+
+function abortReason(signal: AbortSignal): unknown {
+    return signal.reason ?? new DOMException('This operation was aborted', 'AbortError');
+}
+
+/** Sleeps for ms, rejecting at once if the signal aborts. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(abortReason(signal));
+            return;
+        }
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(abortReason(signal!));
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
+}
+
+/** Releases the connection held by a response we will not read. */
+async function discardBody(response: Response): Promise<void> {
+    try {
+        await response.body?.cancel();
+    } catch {
+        // already locked or closed
     }
 }
 
@@ -74,7 +116,8 @@ export async function resilientFetch(
     } = options;
 
     let attempt = 0;
-    let finalUrl = url.toString();
+    const request = typeof Request !== 'undefined' && url instanceof Request ? url : undefined;
+    let finalUrl = request ? request.url : url.toString();
     let finalOptions: RequestInit = fetchOptions;
 
     // Apply request interceptor
@@ -82,21 +125,26 @@ export async function resilientFetch(
         finalOptions = await onRequest(finalUrl, fetchOptions);
     }
 
-    const callerSignal = finalOptions.signal ?? undefined;
+    const callerSignal = finalOptions.signal ?? request?.signal ?? undefined;
 
     while (true) {
         // Do not start an attempt after the caller aborted (also covers the backoff sleep)
         if (callerSignal?.aborted) {
-            throw callerSignal.reason ?? new DOMException('This operation was aborted', 'AbortError');
+            throw abortReason(callerSignal);
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        const timeoutId =
+            timeout > 0 && timeout <= MAX_TIMER_MS
+                ? setTimeout(() => controller.abort(), timeout)
+                : undefined;
         const onCallerAbort = () => controller.abort();
         callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
 
+        let response: Response;
         try {
-            const response = await fetch(finalUrl, {
+            // A Request is cloned per attempt so its body can be sent again
+            response = await fetch(request ? request.clone() : finalUrl, {
                 ...finalOptions,
                 signal: controller.signal
             });
@@ -107,19 +155,13 @@ export async function resilientFetch(
                 // Check if we should retry
                 if (attempt < retries && retryOn(null, response)) {
                     attempt++;
+                    await discardBody(response);
                     const delay = calculateDelay(attempt, retryDelay, backoff);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await sleep(delay, callerSignal);
                     continue;
                 }
-                throw new HttpStatusError(response.status);
+                throw new HttpStatusError(response);
             }
-
-            // Apply response interceptor
-            if (onResponse) {
-                return await onResponse(response);
-            }
-
-            return response;
         } catch (error) {
             clearTimeout(timeoutId);
 
@@ -152,7 +194,7 @@ export async function resilientFetch(
             // Check if we should retry
             if (attempt <= retries && retryOn(err, null)) {
                 const delay = calculateDelay(attempt, retryDelay, backoff);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await sleep(delay, callerSignal);
                 continue;
             }
 
@@ -160,6 +202,21 @@ export async function resilientFetch(
         } finally {
             callerSignal?.removeEventListener('abort', onCallerAbort);
         }
+
+        // Apply response interceptor. Outside the try above, so an error it
+        // throws is not mistaken for a network error and retried.
+        if (onResponse) {
+            try {
+                return await onResponse(response);
+            } catch (error) {
+                if (onError) {
+                    onError(error as Error);
+                }
+                throw error;
+            }
+        }
+
+        return response;
     }
 }
 
