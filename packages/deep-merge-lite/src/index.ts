@@ -11,11 +11,9 @@ export interface MergeOptions {
  * Checks if a value is a plain object (not array, Date, RegExp, etc.)
  */
 function isPlainObject(item: unknown): item is Record<string, unknown> {
-    return (
-        item !== null &&
-        typeof item === 'object' &&
-        (item as object).constructor === Object
-    );
+    if (item === null || typeof item !== 'object') return false;
+    const proto = Object.getPrototypeOf(item);
+    return proto === Object.prototype || proto === null;
 }
 
 /**
@@ -52,6 +50,7 @@ export function cloneDeep<T>(value: T, seen = new WeakMap()): T {
         const clone: Record<string, unknown> = {};
         seen.set(value, clone);
         for (const key of Object.keys(value)) {
+            if (key === '__proto__') continue;
             clone[key] = cloneDeep(value[key], seen);
         }
         return clone as T;
@@ -88,13 +87,20 @@ function deepMergeTwo(
     options: MergeOptions
 ): Record<string, unknown> {
     for (const key of Object.keys(source)) {
-        // Prototype pollution protection
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        // Prototype pollution protection. Other keys, including an own
+        // `constructor`, are plain data and are merged like any other.
+        if (key === '__proto__') {
+            continue;
+        }
+
+        // Second line of defence: an object under these keys is never merged
+        if ((key === 'constructor' || key === 'prototype') && typeof source[key] === 'object' && source[key] !== null) {
             continue;
         }
 
         const sourceValue = source[key];
-        const targetValue = target[key];
+        // Own properties only, so an inherited member (Object under `constructor`) is never a merge target
+        const targetValue = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : undefined;
 
         // Check for custom merge function
         if (options.customMerge) {
