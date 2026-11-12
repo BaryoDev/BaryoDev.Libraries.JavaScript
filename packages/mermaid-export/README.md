@@ -133,6 +133,14 @@ Generic export function that supports all formats.
 
 Close the shared browser instance. Call this when done with all exports.
 
+## Security
+
+Only render diagrams you trust, and only pass trusted option values. The diagram runs in headless Chromium with Mermaid in `securityLevel: 'loose'`, which allows HTML labels and click handlers, and the page can reach the network. An untrusted diagram can make requests from your machine and put script into the SVG you get back. Do not embed that SVG in a page without sanitizing it.
+
+`theme` must be one of `default`, `forest`, `dark`, `neutral`, `base`. Any other value throws. `backgroundColor` is escaped before it goes into the page's CSS.
+
+Chromium is launched with `--no-sandbox`. That flag is needed when running as root in a container, but it turns off a layer of browser isolation, so do not run untrusted diagrams this way.
+
 ## Supported Diagram Types
 
 All Mermaid diagram types are supported:

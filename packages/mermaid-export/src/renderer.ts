@@ -1,8 +1,6 @@
 import puppeteer, { type Browser } from 'puppeteer';
 import type { RasterExportOptions, SvgExportOptions } from './types.js';
-
-/** Mermaid CDN URL for rendering */
-const MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+import { generateHtml, validateTheme } from './html.js';
 
 /** Browser instance for reuse */
 let browserInstance: Browser | null = null;
@@ -31,63 +29,6 @@ export async function closeBrowser(): Promise<void> {
 }
 
 /**
- * Generate HTML template for rendering Mermaid diagram
- */
-function generateHtml(diagram: string, theme: string, backgroundColor: string): string {
-    return `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background-color: ${backgroundColor};
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-        #container {
-            display: inline-block;
-        }
-    </style>
-</head>
-<body>
-    <div id="container">
-        <pre class="mermaid">${escapeHtml(diagram)}</pre>
-    </div>
-    <script type="module">
-        import mermaid from '${MERMAID_CDN}';
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: '${theme}',
-            securityLevel: 'loose'
-        });
-        
-        // Signal when rendering is complete
-        mermaid.run().then(() => {
-            window.mermaidRendered = true;
-        }).catch(err => {
-            window.mermaidError = err.message;
-        });
-    </script>
-</body>
-</html>`;
-}
-
-/**
- * Escape HTML special characters
- */
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-/**
  * Render a Mermaid diagram and return SVG string
  */
 export async function renderToSvg(
@@ -95,6 +36,7 @@ export async function renderToSvg(
     options: SvgExportOptions = {}
 ): Promise<string> {
     const { backgroundColor = 'transparent', theme = 'default' } = options;
+    validateTheme(theme);
 
     const browser = await getBrowser();
     const page = await browser.newPage();
@@ -145,6 +87,7 @@ export async function renderToBuffer(
         theme = 'default',
         scale = 1,
     } = options;
+    validateTheme(theme);
 
     const browser = await getBrowser();
     const page = await browser.newPage();
