@@ -150,4 +150,47 @@ describe('onClickOutside', () => {
             expect(callback).toHaveBeenCalled();
         });
     });
+
+    describe('shadow DOM, once and ignore validation', () => {
+        test('a click inside an element in a shadow root is not outside', () => {
+            const host = document.createElement('div');
+            document.body.appendChild(host);
+            const root = host.attachShadow({ mode: 'open' });
+            const inner = document.createElement('button');
+            root.appendChild(inner);
+
+            const callback = vi.fn();
+            const cleanup = onClickOutside(inner, callback);
+
+            inner.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
+            expect(callback).not.toHaveBeenCalled();
+
+            outside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
+            expect(callback).toHaveBeenCalledTimes(1);
+            cleanup();
+        });
+
+        test('once cleans up even when the callback throws', () => {
+            const callback = vi.fn(() => {
+                throw new Error('boom');
+            });
+            onClickOutside(target, callback, { once: true });
+
+            // jsdom reports an error thrown in a listener to the window instead of rethrowing
+            const onError = vi.fn((e: ErrorEvent) => e.preventDefault());
+            window.addEventListener('error', onError);
+            outside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            outside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            window.removeEventListener('error', onError);
+
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        test('an invalid ignore selector throws once at setup', () => {
+            const addSpy = vi.spyOn(document, 'addEventListener');
+            expect(() => onClickOutside(target, vi.fn(), { ignore: ['div['] })).toThrow();
+            expect(addSpy).not.toHaveBeenCalled();
+            addSpy.mockRestore();
+        });
+    });
 });
