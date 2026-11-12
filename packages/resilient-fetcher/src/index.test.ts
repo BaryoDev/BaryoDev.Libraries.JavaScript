@@ -188,6 +188,16 @@ describe('resilientFetch', () => {
             expect(mockFetch).toHaveBeenCalledTimes(1);
         });
 
+        test('already aborted caller signal makes no fetch call', async () => {
+            const caller = new AbortController();
+            caller.abort();
+
+            await expect(
+                resilientFetch('https://example.com', { signal: caller.signal })
+            ).rejects.toMatchObject({ name: 'AbortError' });
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+
         test('aborts on timeout', async () => {
             vi.useRealTimers();
             mockFetch.mockImplementation((_url, options) => {

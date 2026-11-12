@@ -85,16 +85,15 @@ export async function resilientFetch(
     const callerSignal = finalOptions.signal ?? undefined;
 
     while (true) {
+        // Do not start an attempt after the caller aborted (also covers the backoff sleep)
+        if (callerSignal?.aborted) {
+            throw callerSignal.reason ?? new DOMException('This operation was aborted', 'AbortError');
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         const onCallerAbort = () => controller.abort();
-        if (callerSignal) {
-            if (callerSignal.aborted) {
-                controller.abort();
-            } else {
-                callerSignal.addEventListener('abort', onCallerAbort, { once: true });
-            }
-        }
+        callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
 
         try {
             const response = await fetch(finalUrl, {
