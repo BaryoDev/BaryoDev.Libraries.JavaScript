@@ -1,11 +1,11 @@
 # BaryoDev Libraries
 
-> Zero-dependency, ultra-lightweight JavaScript utility libraries
+> Ultra-lightweight JavaScript utility libraries, most with zero runtime dependencies
 
 [![CI](https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript/actions/workflows/ci.yml/badge.svg)](https://github.com/BaryoDev/BaryoDev.Libraries.JavaScript/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A collection of tiny, focused utility packages with **zero runtime dependencies**. Each package is designed to do one thing well.
+A collection of tiny, focused utility packages with **zero runtime dependencies**, except `mermaid-export`, which depends on `puppeteer` and downloads Chromium on install. Each package is designed to do one thing well.
 
 ## 📦 Packages
 
@@ -16,17 +16,19 @@ A collection of tiny, focused utility packages with **zero runtime dependencies*
 | [nano-safe-storage](#nano-safe-storage)           | Fault-tolerant localStorage wrapper | <600b |
 | [nano-human-bytes](#nano-human-bytes)             | Human-readable byte formatting      | <500b |
 | [tiny-debounce-throttle](#tiny-debounce-throttle) | Debounce/throttle with cancel/flush | <600b |
-| [tiny-time-ago](#tiny-time-ago)                   | Relative time formatting            | <500b |
+| [tiny-time-ago](#tiny-time-ago)                   | Relative time formatting (not yet published to npm) | <500b |
 | [click-outside-lite](#click-outside-lite)         | Click outside detection             | <400b |
 | [deep-merge-lite](#deep-merge-lite)               | Deep merge with array strategies    | <700b |
 | [deep-clean-obj](#deep-clean-obj)                 | Remove null/undefined from objects  | <500b |
 | [resilient-fetcher](#resilient-fetcher)           | Fetch with retry/timeout            | <800b |
+| [mermaid-export](#mermaid-export)                 | Export Mermaid diagrams (needs puppeteer) | n/a |
+| [nano-form-sanitize](#nano-form-sanitize)         | Empty strings to null for forms (not yet published to npm) | n/a |
 
 ---
 
 ## Installation
 
-Install any package individually:
+Install any published package individually. `tiny-time-ago` and `nano-form-sanitize` are not on npm yet, so their install commands will not work until they are published.
 
 ```bash
 npm install nano-clsx nano-slug nano-safe-storage
@@ -183,6 +185,18 @@ const response = await resilientFetch('https://api.example.com', {
   backoff: 'exponential'
 });
 ```
+
+---
+
+## mermaid-export
+
+Export Mermaid diagrams to SVG or image formats. Unlike the other packages it has a runtime dependency: `puppeteer`, which downloads Chromium on install.
+
+---
+
+## nano-form-sanitize
+
+Converts empty form strings to `null` before API submission. Not yet published to npm.
 
 ---
 
