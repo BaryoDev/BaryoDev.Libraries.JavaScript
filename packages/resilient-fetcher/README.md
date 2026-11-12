@@ -34,12 +34,16 @@ Extends standard `RequestInit`.
 
 -   `retries`: number (default: 3)
 -   `retryDelay`: number (ms) (default: 1000)
--   `timeout`: number (ms) (default: 5000)
+-   `timeout`: number (ms) (default: 5000). `0` or `Infinity` means no timeout.
 -   `backoff`: 'fixed' | 'exponential' (default: 'fixed')
 -   `retryOn`: `(error, response) => boolean` (custom retry logic)
 -   `onRequest`: `(url, options) => options` (interceptor)
 -   `onResponse`: `(response) => response` (interceptor)
 -   `onError`: `(error) => void` (handler)
+
+## Errors
+
+A non-ok response that is not retried rejects with an `HttpStatusError`. It has `status` and `response` (the body is unread, so you can read the error body from it). The `Request` object form of the first argument is supported.
 
 ## License
 
