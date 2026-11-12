@@ -77,8 +77,7 @@ describe('resilientFetch', () => {
         expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
-    // TODO: Fix fake timer/AbortController conflict - logic verified working in integration
-    test.skip('does not retry on 4xx by default', async () => {
+    test('does not retry on 4xx by default', async () => {
         mockFetch.mockResolvedValue({ ok: false, status: 404 });
 
         const promise = resilientFetch('https://example.com', {
@@ -89,6 +88,22 @@ describe('resilientFetch', () => {
 
         await expect(promise).rejects.toThrow('Request failed with status 404');
         expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    test('retries 5xx up to the retry limit then throws', async () => {
+        mockFetch.mockResolvedValue({ ok: false, status: 503 });
+
+        const promise = resilientFetch('https://example.com', {
+            retries: 2,
+            retryDelay: 50
+        }).catch(e => e);
+
+        await vi.advanceTimersByTimeAsync(50);
+        await vi.advanceTimersByTimeAsync(50);
+
+        const error = await promise;
+        expect(error.message).toBe('Request failed with status 503');
+        expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
     test('custom retryOn condition', async () => {
@@ -145,6 +160,42 @@ describe('resilientFetch', () => {
             const call = mockFetch.mock.calls[0];
             expect(call[1].signal).toBeDefined();
             expect(call[1].signal).toBeInstanceOf(AbortSignal);
+        });
+
+        test('caller abort stops the request and is not retried', async () => {
+            mockFetch.mockImplementation((_url, options) => {
+                return new Promise((_resolve, reject) => {
+                    options.signal.addEventListener('abort', () => {
+                        const err = new Error('Aborted');
+                        err.name = 'AbortError';
+                        reject(err);
+                    });
+                });
+            });
+
+            const caller = new AbortController();
+            const promise = resilientFetch('https://example.com', {
+                retries: 3,
+                retryDelay: 50,
+                signal: caller.signal
+            }).catch(e => e);
+
+            caller.abort();
+            await vi.advanceTimersByTimeAsync(500);
+
+            const error = await promise;
+            expect(error.name).toBe('AbortError');
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+
+        test('already aborted caller signal makes no fetch call', async () => {
+            const caller = new AbortController();
+            caller.abort();
+
+            await expect(
+                resilientFetch('https://example.com', { signal: caller.signal })
+            ).rejects.toMatchObject({ name: 'AbortError' });
+            expect(mockFetch).not.toHaveBeenCalled();
         });
 
         test('aborts on timeout', async () => {

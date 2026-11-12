@@ -37,6 +37,14 @@ const defaultRetryOn = (_error: Error | null, response: Response | null): boolea
     return response.status >= 500;
 };
 
+/** Thrown for a non-ok response that is not retried. Never passed to retryOn. */
+class HttpStatusError extends Error {
+    constructor(status: number) {
+        super(`Request failed with status ${status}`);
+        this.name = 'HttpStatusError';
+    }
+}
+
 /**
  * A resilient wrapper around the native fetch API with retry and timeout capabilities.
  *
@@ -74,9 +82,18 @@ export async function resilientFetch(
         finalOptions = await onRequest(finalUrl, fetchOptions);
     }
 
+    const callerSignal = finalOptions.signal ?? undefined;
+
     while (true) {
+        // Do not start an attempt after the caller aborted (also covers the backoff sleep)
+        if (callerSignal?.aborted) {
+            throw callerSignal.reason ?? new DOMException('This operation was aborted', 'AbortError');
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
+        const onCallerAbort = () => controller.abort();
+        callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
 
         try {
             const response = await fetch(finalUrl, {
@@ -94,7 +111,7 @@ export async function resilientFetch(
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
-                throw new Error(`Request failed with status ${response.status}`);
+                throw new HttpStatusError(response.status);
             }
 
             // Apply response interceptor
@@ -105,6 +122,23 @@ export async function resilientFetch(
             return response;
         } catch (error) {
             clearTimeout(timeoutId);
+
+            // The caller aborted: surface the abort and never retry
+            if (callerSignal?.aborted) {
+                if (onError) {
+                    onError(error as Error);
+                }
+                throw error;
+            }
+
+            // A non-ok HTTP response already went through retryOn above
+            if (error instanceof HttpStatusError) {
+                if (onError) {
+                    onError(error);
+                }
+                throw error;
+            }
+
             attempt++;
 
             const isAbort = (error as Error).name === 'AbortError';
@@ -123,6 +157,8 @@ export async function resilientFetch(
             }
 
             throw err;
+        } finally {
+            callerSignal?.removeEventListener('abort', onCallerAbort);
         }
     }
 }
