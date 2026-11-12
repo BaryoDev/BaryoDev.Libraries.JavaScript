@@ -40,6 +40,12 @@ storage.remove('user');
 -   **Memory Fallback**: Works in private mode or non-browser environments (like SSR) without crashing.
 -   **Safe JSON**: Handles JSON parsing errors gracefully.
 
+## Clearing
+
+`clear()` removes only the keys that start with the instance's `prefix`. With no `prefix` the library cannot tell its keys from anyone else's, so `clear()` clears the whole storage (the whole origin's `localStorage` in a browser, the whole memory store in the fallback). Give your instance a `prefix` if other code shares the origin.
+
+Methods do not depend on `this`, so `const { get, set } = createStorage()` works.
+
 ## License
 
 MIT
