@@ -40,6 +40,16 @@ Thank you for your interest in contributing! This monorepo hosts zero-dependency
 - Follow the existing code style.
 - Use `pnpm lint` to check for issues (if available).
 
+## Releasing
+
+The tests for `mermaid-export` need Chrome through puppeteer. Install it once on your machine:
+
+```bash
+pnpm --filter mermaid-export exec puppeteer browsers install chrome
+```
+
+Then run `pnpm release`. It typechecks, tests, builds and publishes. A type error or failing test stops the publish.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under its MIT License.
