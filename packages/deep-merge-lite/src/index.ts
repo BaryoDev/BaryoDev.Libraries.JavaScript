@@ -93,8 +93,14 @@ function deepMergeTwo(
             continue;
         }
 
+        // Second line of defence: an object under these keys is never merged
+        if ((key === 'constructor' || key === 'prototype') && typeof source[key] === 'object' && source[key] !== null) {
+            continue;
+        }
+
         const sourceValue = source[key];
-        const targetValue = target[key];
+        // Own properties only, so an inherited member (Object under `constructor`) is never a merge target
+        const targetValue = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : undefined;
 
         // Check for custom merge function
         if (options.customMerge) {

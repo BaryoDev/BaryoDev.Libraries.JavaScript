@@ -177,6 +177,13 @@ describe('edge cases', () => {
             expect((Object.prototype as any).p).toBeUndefined();
         });
 
+        test('a recursive customMerge cannot reach Object.prototype through constructor', () => {
+            const opts = { customMerge: () => (a: unknown, b: unknown) => merge(a as any, b as any) };
+            expect(() => merge({}, JSON.parse('{"constructor":{"prototype":{"polluted":true}}}'), opts)).not.toThrow();
+            expect(({} as any).polluted).toBeUndefined();
+            expect((Object.prototype as any).polluted).toBeUndefined();
+        });
+
         test('cloneDeep skips __proto__ and keeps constructor data', () => {
             const clone = cloneDeep(JSON.parse('{"__proto__":{"p":1},"constructor":{"k":1}}')) as any;
             expect(clone.p).toBeUndefined();
