@@ -133,9 +133,46 @@ describe('edge cases', () => {
         }
     });
 
-    test('fallback ignores future tense (limitation)', () => {
-        const future = Date.now() + 60 * 1000;
-        const result = timeAgo(future, { useIntl: false });
-        expect(result).toContain('minute ago');
+    test('fallback uses future tense', () => {
+        const future = Date.now() + 5 * 60 * 1000;
+        expect(timeAgo(future, { useIntl: false })).toBe('in 5 minutes');
+        expect(timeAgo(Date.now() + 60 * 1000, { useIntl: false })).toBe('in 1 minute');
+    });
+});
+
+describe('fallback strings and unit edges', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-12-24T12:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    test('fallback shows the number for one unit', () => {
+        const now = Date.now();
+        expect(timeAgo(now - 60 * 1000, { useIntl: false })).toBe('1 minute ago');
+        expect(timeAgo(now - 1000, { useIntl: false })).toBe('1 second ago');
+        expect(timeAgo(now - 3600 * 1000, { useIntl: false })).toBe('1 hour ago');
+    });
+
+    test('fallback plural and es', () => {
+        const now = Date.now();
+        expect(timeAgo(now - 5 * 60 * 1000, { useIntl: false })).toBe('5 minutes ago');
+        expect(timeAgo(now - 60 * 1000, { useIntl: false, locale: 'es' })).toBe('hace 1 minuto');
+        expect(timeAgo(now - 3 * 60 * 1000, { useIntl: false, locale: 'es' })).toBe('hace 3 minutos');
+        expect(timeAgo(now + 3 * 60 * 1000, { useIntl: false, locale: 'es' })).toBe('dentro de 3 minutos');
+    });
+
+    test('rounding moves to the next unit instead of 60 seconds', () => {
+        const now = Date.now();
+        const opts = { useIntl: false };
+        expect(timeAgo(now - 59400, opts)).toBe('59 seconds ago');
+        expect(timeAgo(now - 59600, opts)).toBe('1 minute ago');
+        expect(timeAgo(now - 23.6 * 3600 * 1000, opts)).toBe('1 day ago');
+        expect(timeAgo(now - 6.6 * 86400 * 1000, opts)).toBe('1 week ago');
+        expect(timeAgo(now - 11.6 * 30 * 86400 * 1000, opts)).toBe('1 year ago');
+        expect(timeAgo(now - 59600)).not.toMatch(/60/);
     });
 });
