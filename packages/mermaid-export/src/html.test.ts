@@ -34,6 +34,14 @@ describe('escapeCss', () => {
         expect(escapeCss('rgb(1, 2, 3)')).toBe('rgb(1, 2, 3)');
     });
 
+    it('keeps the modern rgb syntax valid', () => {
+        expect(escapeCss('rgb(0 0 0 / 50%)')).toBe('rgb(0 0 0 / 50%)');
+    });
+
+    it('still escapes a comment opener', () => {
+        expect(escapeCss('red/*x')).toBe('red\\2f \\2a x');
+    });
+
     it('escapes characters that end a declaration or the style tag', () => {
         const out = escapeCss('red;} </style><script>alert(1)</script>');
         expect(out).not.toMatch(/[;{}<>]/);

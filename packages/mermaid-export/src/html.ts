@@ -26,13 +26,16 @@ export function escapeJsString(value: string): string {
 
 /**
  * A value for a CSS declaration. Anything outside letters, digits and
- * the characters colors use (# ( ) , . % space -) is hex escaped, so it
+ * the characters colors use (# ( ) , . % space - and / unless it opens a comment) is hex escaped, so it
  * cannot end the declaration, open a block or close the style tag.
  */
 export function escapeCss(value: string): string {
     return String(value).replace(
         /[^A-Za-z0-9#(),.% -]/gu,
-        (ch) => `\\${ch.codePointAt(0)!.toString(16)} `
+        (ch, offset, str) =>
+            ch === '/' && str[offset + 1] !== '*'
+                ? ch
+                : `\\${ch.codePointAt(0)!.toString(16)} `
     );
 }
 
