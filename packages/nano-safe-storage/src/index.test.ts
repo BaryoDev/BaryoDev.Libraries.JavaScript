@@ -94,4 +94,67 @@ describe('nano-safe-storage', () => {
             spy.mockRestore();
         });
     });
+
+    describe('destructuring and clear', () => {
+        test('methods work when destructured', () => {
+            const { set, get, has, remove, clear: clearAll } = createStorage({ prefix: 'd_' });
+            set('k', 1);
+            expect(get('k')).toBe(1);
+            expect(has('k')).toBe(true);
+            remove('k');
+            expect(has('k')).toBe(false);
+            expect(() => clearAll()).not.toThrow();
+        });
+
+        test('an expired item is removed by a destructured get', () => {
+            const { set, get } = createStorage({ prefix: 'e_' });
+            const now = Date.now();
+            const spy = vi.spyOn(Date, 'now').mockReturnValue(now);
+            set('k', 1, { ttl: 1 });
+            spy.mockReturnValue(now + 2000);
+            expect(get('k')).toBeNull();
+            expect(localStorage.getItem('e_k')).toBeNull();
+            spy.mockRestore();
+        });
+
+        test('clear with a prefix leaves other keys alone', () => {
+            localStorage.setItem('other_lib', 'keep');
+            const a = createStorage({ prefix: 'a_' });
+            const b = createStorage({ prefix: 'b_' });
+            a.set('x', 1);
+            b.set('x', 2);
+
+            a.clear();
+
+            expect(a.get('x')).toBeNull();
+            expect(b.get('x')).toBe(2);
+            expect(localStorage.getItem('other_lib')).toBe('keep');
+        });
+
+        test('clear without a prefix clears the whole store', () => {
+            localStorage.setItem('other_lib', 'gone');
+            createStorage().clear();
+            expect(localStorage.getItem('other_lib')).toBeNull();
+        });
+
+        test('clear with a prefix leaves other namespaces alone in the memory fallback', async () => {
+            const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new Error('unavailable');
+            });
+            vi.resetModules();
+            const mod = await import('./index');
+            setItemSpy.mockRestore();
+
+            expect(mod.createStorage().isAvailable()).toBe(false);
+            const a = mod.createStorage({ prefix: 'a_' });
+            const b = mod.createStorage({ prefix: 'b_' });
+            a.set('x', 1);
+            b.set('x', 2);
+
+            a.clear();
+
+            expect(a.get('x')).toBeNull();
+            expect(b.get('x')).toBe(2);
+        });
+    });
 });
