@@ -1,21 +1,19 @@
 # nano-form-sanitize
 
-Tiny form value sanitizer — converts empty strings to `null` before API submission.
+Tiny form value sanitizer converts empty strings to `null` before API submission.
 
 HTML form fields produce empty strings (`""`) for blank inputs, but typed REST APIs (e.g., .NET `DateOnly?`, `int?`) reject them. This utility converts empty strings to `null` so nullable backend fields receive proper null values.
 
 ## Install
 
-```bash
-npm install nano-form-sanitize
-```
+Not yet published to npm. `npm install nano-form-sanitize` returns 404 until the first release.
 
 ## Usage
 
 ```ts
 import { sanitize } from 'nano-form-sanitize';
 
-// Basic: empty strings → null
+// Basic: empty strings to null
 sanitize({ name: 'Jo', dob: '' });
 // => { name: 'Jo', dob: null }
 

@@ -12,7 +12,7 @@ pnpm add mermaid-export
 yarn add mermaid-export
 ```
 
-> **Note**: This package uses Puppeteer to render Mermaid diagrams. On first install, Puppeteer will download a Chromium binary (~300MB).
+> **Note**: Unlike the other packages in this repo, this one has a runtime dependency (`puppeteer`). It uses Puppeteer to render Mermaid diagrams. On first install, Puppeteer will download a Chromium binary (~300MB).
 
 ## Usage
 

@@ -4,11 +4,7 @@ A tiny (300b) relative time formatter (`3 minutes ago`) with live updates and `I
 
 ## Installation
 
-```bash
-pnpm add tiny-time-ago
-# or
-npm install tiny-time-ago
-```
+Not yet published to npm. `npm install tiny-time-ago` returns 404 until the first release.
 
 ## Usage
 
