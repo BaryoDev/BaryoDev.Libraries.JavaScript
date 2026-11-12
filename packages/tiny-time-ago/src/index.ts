@@ -24,38 +24,48 @@ const THRESHOLDS: TimeThreshold[] = [
 ];
 
 // Fallback strings for when Intl.RelativeTimeFormat is not available
-const FALLBACK_STRINGS: Record<string, Record<TimeUnit, { singular: string; plural: string }>> = {
+interface FallbackLocale {
+    past: (n: number, noun: string) => string;
+    future: (n: number, noun: string) => string;
+    nouns: Record<TimeUnit, { singular: string; plural: string }>;
+}
+
+const FALLBACK_STRINGS: Record<string, FallbackLocale> = {
     en: {
-        second: { singular: 'second ago', plural: 'seconds ago' },
-        minute: { singular: 'minute ago', plural: 'minutes ago' },
-        hour: { singular: 'hour ago', plural: 'hours ago' },
-        day: { singular: 'day ago', plural: 'days ago' },
-        week: { singular: 'week ago', plural: 'weeks ago' },
-        month: { singular: 'month ago', plural: 'months ago' },
-        year: { singular: 'year ago', plural: 'years ago' }
+        past: (n, noun) => `${n} ${noun} ago`,
+        future: (n, noun) => `in ${n} ${noun}`,
+        nouns: {
+            second: { singular: 'second', plural: 'seconds' },
+            minute: { singular: 'minute', plural: 'minutes' },
+            hour: { singular: 'hour', plural: 'hours' },
+            day: { singular: 'day', plural: 'days' },
+            week: { singular: 'week', plural: 'weeks' },
+            month: { singular: 'month', plural: 'months' },
+            year: { singular: 'year', plural: 'years' }
+        }
     },
     es: {
-        second: { singular: 'hace 1 segundo', plural: 'hace {n} segundos' },
-        minute: { singular: 'hace 1 minuto', plural: 'hace {n} minutos' },
-        hour: { singular: 'hace 1 hora', plural: 'hace {n} horas' },
-        day: { singular: 'hace 1 día', plural: 'hace {n} días' },
-        week: { singular: 'hace 1 semana', plural: 'hace {n} semanas' },
-        month: { singular: 'hace 1 mes', plural: 'hace {n} meses' },
-        year: { singular: 'hace 1 año', plural: 'hace {n} años' }
+        past: (n, noun) => `hace ${n} ${noun}`,
+        future: (n, noun) => `dentro de ${n} ${noun}`,
+        nouns: {
+            second: { singular: 'segundo', plural: 'segundos' },
+            minute: { singular: 'minuto', plural: 'minutos' },
+            hour: { singular: 'hora', plural: 'horas' },
+            day: { singular: 'día', plural: 'días' },
+            week: { singular: 'semana', plural: 'semanas' },
+            month: { singular: 'mes', plural: 'meses' },
+            year: { singular: 'año', plural: 'años' }
+        }
     }
 };
 
 function formatFallback(value: number, unit: TimeUnit, locale: string): string {
     const strings = FALLBACK_STRINGS[locale] ?? FALLBACK_STRINGS.en;
     const absValue = Math.abs(value);
+    const nouns = strings.nouns[unit];
+    const noun = absValue === 1 ? nouns.singular : nouns.plural;
 
-    if (absValue === 1) {
-        return strings[unit].singular;
-    }
-
-    return strings[unit].plural.includes('{n}')
-        ? strings[unit].plural.replace('{n}', String(absValue))
-        : `${absValue} ${strings[unit].plural}`;
+    return value > 0 ? strings.future(absValue, noun) : strings.past(absValue, noun);
 }
 
 /**
@@ -83,9 +93,11 @@ export function timeAgo(
     let value = 0;
 
     for (const threshold of THRESHOLDS) {
-        if (absDiff < threshold.ms * threshold.max) {
+        // Round first, so 59.6 seconds is "1 minute" and not "60 seconds"
+        const rounded = Math.round(absDiff / threshold.ms);
+        if (rounded < threshold.max) {
             unit = threshold.unit;
-            value = Math.round(absDiff / threshold.ms);
+            value = rounded;
             break;
         }
     }
